@@ -1,0 +1,6 @@
+# Spec Kit panel: a workspace-generic right-sidebar tab plus its authenticated
+# Host API. The panel only reads files and sends the user's chosen /speckit
+# prompt; it never edits Spec Kit files or runs git commands itself.
+- insert:
+    - id: speckit-panel
+      name: '@inhuman/dsh-speckit-panel'

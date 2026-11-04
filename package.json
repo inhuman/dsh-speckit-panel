@@ -1,0 +1,20 @@
+{
+  "name": "@inhuman/dsh-speckit-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Spec Kit status panel for DeepSeek Harness: works in any workspace, shows the spec-driven pipeline and triggers /speckit stages.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": ["index.js", "client.js", "cordis.patch.yml", "README.md", "icon.svg"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-sidebar-right", "@deepseek-ai/dsh-client-locale"]
+    }
+  }
+}
