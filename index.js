@@ -7,7 +7,7 @@ import path from 'node:path';
 export const inject = ['connection', 'sessions', 'workingDirectory'];
 export const API = '/api/dsh-speckit-panel';
 const LIMIT = 256 * 1024;
-const FILE_NAMES = ['spec.md', 'specify.md', 'clarify.md', 'plan.md', 'tasks.md', 'checklist.md', 'research.md', 'data-model.md', 'quickstart.md'];
+const FILE_NAMES = ['spec.md', 'specify.md', 'plan.md', 'tasks.md', 'checklist.md', 'research.md', 'data-model.md', 'quickstart.md'];
 
 const fail = (code, message) => { throw Object.assign(new Error(message), { code }); };
 
@@ -70,6 +70,8 @@ async function listFeatures(root) {
       seen.add(rel);
       let title = entry.name;
       let tasks = { done: 0, total: 0 };
+      let clarify = false;
+      let clarifySession = null;
       for (const file of files) {
         if (file.name === 'tasks.md') {
           try {
@@ -85,11 +87,16 @@ async function listFeatures(root) {
             const { text } = await readBounded(path.join(root, file.path));
             const heading = /^#\s+(.+)$/m.exec(text);
             if (heading) title = heading[1].trim();
+            // Upstream Spec Kit records clarification inside the spec itself.
+            if (/^##\s+Clarifications\b/m.test(text)) {
+              clarify = true;
+              clarifySession = /^###\s+Session\s+(\d{4}-\d\d-\d\d)/m.exec(text)?.[1] ?? null;
+            }
           } catch { /* keep slug */ }
         }
       }
       features.push({ slug: entry.name, path: rel, layout: source.layout, title, files, tasks,
-        clarify: files.some(file => file.name === 'clarify.md') });
+        clarify, clarifySession });
     }
   }
   features.sort((a, b) => b.slug.localeCompare(a.slug));

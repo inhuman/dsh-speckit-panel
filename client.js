@@ -65,7 +65,7 @@ window.__ModuleLoader__.load({
       }
       const ready = name => name === 'constitution' ? Boolean(state?.constitution)
         : name === 'specify' ? Boolean(specName)
-        : name === 'clarify' ? has('clarify.md')
+        : name === 'clarify' ? Boolean(active?.clarify)
         : has(name);
       return h('section', { className: 'sk-page' }, h('style', null, css),
         h('div', { className: 'sk-row sk-between' }, h('h1', { className: 'sk-title' }, 'Spec Kit'), h('button', { className: 'sk-button', type: 'button', onClick: () => setTick(x => x + 1) }, 'Refresh')),
@@ -97,9 +97,9 @@ window.__ModuleLoader__.load({
             ...STAGES.map(([key, label, command]) => h('div', { className: 'sk-stage', key },
               h('span', { className: 'sk-dot', 'data-ready': ready(key) }),
               h('span', { className: 'sk-name' }, label),
-              h('span', { className: 'sk-file' }, key === 'clarify' ? (active?.clarify ? 'clarified' : '—') : key === 'analyze' ? (active?.files.find(f => /^analy[sz]e/i.test(f.name))?.name ?? '—') : (active?.files.find(f => f.name === `${key}.md`)?.name ?? (key === 'constitution' ? (state.constitution?.path ?? '—') : '—'))),
+              h('span', { className: 'sk-file' }, key === 'clarify' ? (active?.clarify ? `clarified${active.clarifySession ? ` · ${active.clarifySession}` : ''}` : '—') : key === 'analyze' ? (active?.files.find(f => /^analy[sz]e/i.test(f.name))?.name ?? '—') : (active?.files.find(f => f.name === `${key}.md`)?.name ?? (key === 'constitution' ? (state.constitution?.path ?? '—') : '—'))),
               h('button', { className: 'sk-button', type: 'button', onClick: () => {
-                if (key === 'clarify' && slug) send(command, `${slug}\nAfter finishing, write a short summary of the clarifications to .speckit/features/${slug}/clarify.md so the panel can mark this stage on every device.`);
+                if (key === 'clarify' && slug) send(command, `${slug}\nFollow upstream Spec Kit: record each accepted answer in a \`## Clarifications\` section of the feature spec, under a \`### Session YYYY-MM-DD\` subheading, so the panel can mark this stage on every device.`);
                 else send(command);
               } }, 'Run'))),
             active?.tasks.total ? h(React.Fragment, null,
