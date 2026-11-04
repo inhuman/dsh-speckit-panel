@@ -3,6 +3,8 @@
 import * as fs from 'node:fs/promises';
 import { constants as C } from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 export const inject = ['connection', 'sessions', 'workingDirectory'];
 export const API = '/api/dsh-speckit-panel';
@@ -95,12 +97,41 @@ async function listFeatures(root) {
           } catch { /* keep slug */ }
         }
       }
+      const specRel = files.find(file => file.name === 'spec.md' || file.name === 'specify.md')?.path;
+      const clarifyCommit = !clarify && specRel ? await gitClarified(root, specRel) : null;
       features.push({ slug: entry.name, path: rel, layout: source.layout, title, files, tasks,
-        clarify, clarifySession });
+        clarify: clarify || Boolean(clarifyCommit),
+        clarifySession: clarifySession ?? clarifyCommit });
     }
   }
   features.sort((a, b) => b.slug.localeCompare(a.slug));
   return features;
+}
+
+const run = promisify(execFile);
+const clarifyCommits = new Map();
+
+/**
+ * A read-only fallback for specs clarified before the section convention:
+ * a commit that touched this spec and says "clarify" in its subject.
+ * @returns the commit date (YYYY-MM-DD) or null.
+ */
+async function gitClarified(root, specRel) {
+  const key = `${root}|${specRel}`;
+  const cached = clarifyCommits.get(key);
+  if (cached && Date.now() - cached.at < 30000) return cached.value;
+  let value = null;
+  try {
+    const { stdout } = await run('git', ['-C', root, 'log', '--format=%cs%x09%s', '-n', '30', '--', specRel], {
+      timeout: 2000, maxBuffer: 64 * 1024,
+    });
+    for (const line of stdout.split('\n')) {
+      const [date, subject] = line.split('\t');
+      if (subject && /clarif/i.test(subject)) { value = date || null; break; }
+    }
+  } catch { value = null; }
+  clarifyCommits.set(key, { at: Date.now(), value });
+  return value;
 }
 
 async function constitution(root) {
