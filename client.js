@@ -63,7 +63,10 @@ window.__ModuleLoader__.load({
         try { setFile(await api({ action: 'file', session: props.sessionId, path: rel })); }
         catch (e) { setError(e.message); }
       }
-      const ready = name => name === 'constitution' ? Boolean(state?.constitution) : has(name);
+      const ready = name => name === 'constitution' ? Boolean(state?.constitution)
+        : name === 'specify' ? Boolean(specName)
+        : name === 'clarify' ? Boolean(specName)
+        : has(name);
       return h('section', { className: 'sk-page' }, h('style', null, css),
         h('div', { className: 'sk-row sk-between' }, h('h1', { className: 'sk-title' }, 'Spec Kit'), h('button', { className: 'sk-button', type: 'button', onClick: () => setTick(x => x + 1) }, 'Refresh')),
         state ? h('p', { className: 'sk-muted' }, `${state.workspace}${state.branch ? ` · ${state.branch}` : ''}`) : h('p', { className: 'sk-muted' }, 'Loading…'),
