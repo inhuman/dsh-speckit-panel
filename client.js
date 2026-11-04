@@ -42,7 +42,7 @@ window.__ModuleLoader__.load({
     function Panel(props) {
       const tab = props.useTabInfo().tab;
       const [state, setState] = useState(null), [error, setError] = useState('');
-      const [slug, setSlug] = useState(''), [file, setFile] = useState(null), [tick, setTick] = useState(0);
+      const [slug, setSlug] = useState(''), [newSlug, setNewSlug] = useState(''), [file, setFile] = useState(null), [tick, setTick] = useState(0);
       useEffect(() => {
         if (!tab.visible) return;
         const ctl = new AbortController();
@@ -53,8 +53,8 @@ window.__ModuleLoader__.load({
       }, [tab.visible, props.sessionId, tick]);
       const active = state?.features.find(f => f.slug === slug) ?? null;
       const has = name => active?.files.some(f => f.name === name) ?? false;
-      function send(command, extra = '') {
-        const text = `/${command}${slug ? ` ${slug}` : ''}${extra ? ` ${extra}` : ''}`;
+      function send(command, feature = slug) {
+        const text = `/${command}${feature ? ` ${feature}` : ''}`;
         try { props.inputActions.setDraft(text); props.inputActions.submit(); setError(''); }
         catch (e) { setError(e.message); }
       }
@@ -73,8 +73,21 @@ window.__ModuleLoader__.load({
           h('button', { className: 'sk-button sk-primary', type: 'button', disabled: !active, onClick: () => send('speckit-plan') }, 'Plan'),
           h('button', { className: 'sk-button', type: 'button', disabled: !slug, onClick: () => send('speckit-implement') }, 'Implement')),
         !state ? null : !state.features.length ? h('div', { className: 'sk-card' },
-          h('p', { className: 'sk-muted' }, 'No Spec Kit feature found in this workspace. Expected specs/<feature>/spec.md or .speckit/features/<feature>/spec.md.'),
-          h('button', { className: 'sk-button sk-primary', type: 'button', onClick: () => send('speckit-constitution') }, 'Create constitution')) : h(React.Fragment, null,
+          state.constitution
+            ? h(React.Fragment, null,
+              h('p', { className: 'sk-muted' }, `Constitution: ${state.constitution.path}`),
+              h('div', { className: 'sk-row', style: { marginTop: 6 } },
+                h('button', { className: 'sk-button', type: 'button', onClick: () => open(state.constitution.path) }, 'View'),
+                h('button', { className: 'sk-button', type: 'button', onClick: () => send('speckit-constitution') }, 'Update constitution')))
+            : h(React.Fragment, null,
+              h('p', { className: 'sk-muted' }, 'No Spec Kit constitution or feature found in this workspace.'),
+              h('button', { className: 'sk-button sk-primary', type: 'button', onClick: () => send('speckit-constitution') }, 'Create constitution')),
+          h('p', { className: 'sk-muted', style: { marginTop: 10 } }, 'Start the first feature with a short lowercase slug:'),
+          h('div', { className: 'sk-row' },
+            h('input', { className: 'sk-input', value: newSlug, placeholder: 'feature-slug', 'aria-label': 'New feature slug',
+              onChange: e => setNewSlug(e.target.value.replace(/[^a-z0-9-]/g, '')) }),
+            h('button', { className: 'sk-button sk-primary', type: 'button', disabled: !newSlug,
+              onClick: () => send('speckit-specify', newSlug) }, 'Specify feature'))) : h(React.Fragment, null,
           h('div', { className: 'sk-card' },
             h('div', { className: 'sk-row sk-between' }, h('strong', { style: { fontSize: 13 } }, 'Pipeline'), h('span', { className: 'sk-muted' }, active?.layout ?? '')),
             ...STAGES.map(([key, label, command]) => h('div', { className: 'sk-stage', key },
