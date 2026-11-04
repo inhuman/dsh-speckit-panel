@@ -134,7 +134,7 @@ function json(value, status = 200) {
 
 export async function apply(ctx) {
   ctx.effect(() => ctx.connection.fetch.register({
-    path: API, methods: ['GET'], requestBody: 'none',
+    path: API, methods: ['GET'], requestBody: 'buffered',
     async fetch(request) {
       try {
         const url = new URL(request.url);
