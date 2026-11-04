@@ -7,7 +7,7 @@ import path from 'node:path';
 export const inject = ['connection', 'sessions', 'workingDirectory'];
 export const API = '/api/dsh-speckit-panel';
 const LIMIT = 256 * 1024;
-const FILE_NAMES = ['spec.md', 'plan.md', 'tasks.md', 'checklist.md', 'research.md', 'data-model.md', 'quickstart.md'];
+const FILE_NAMES = ['spec.md', 'specify.md', 'plan.md', 'tasks.md', 'checklist.md', 'research.md', 'data-model.md', 'quickstart.md'];
 
 const fail = (code, message) => { throw Object.assign(new Error(message), { code }); };
 
@@ -80,7 +80,7 @@ async function listFeatures(root) {
             }
           } catch { /* counts stay zero */ }
         }
-        if (file.name === 'spec.md') {
+        if (file.name === 'spec.md' || file.name === 'specify.md') {
           try {
             const { text } = await readBounded(path.join(root, file.path));
             const heading = /^#\s+(.+)$/m.exec(text);

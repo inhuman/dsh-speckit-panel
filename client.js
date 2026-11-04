@@ -52,7 +52,8 @@ window.__ModuleLoader__.load({
         return () => ctl.abort();
       }, [tab.visible, props.sessionId, tick]);
       const active = state?.features.find(f => f.slug === slug) ?? null;
-      const has = name => active?.files.some(f => f.name === name) ?? false;
+      const specName = active?.files.find(f => f.name === 'spec.md' || f.name === 'specify.md')?.name;
+      const has = name => name === 'spec.md' ? Boolean(specName) : (active?.files.some(f => f.name === name) ?? false);
       function send(command, feature = slug) {
         const text = `/${command}${feature ? ` ${feature}` : ''}`;
         try { props.inputActions.setDraft(text); props.inputActions.submit(); setError(''); }
@@ -93,7 +94,7 @@ window.__ModuleLoader__.load({
             ...STAGES.map(([key, label, command]) => h('div', { className: 'sk-stage', key },
               h('span', { className: 'sk-dot', 'data-ready': ready(key) }),
               h('span', { className: 'sk-name' }, label),
-              h('span', { className: 'sk-file' }, key === 'clarify' ? (has('spec.md') ? 'updates spec.md' : '—') : key === 'analyze' ? (active?.files.find(f => /^analy[sz]e/i.test(f.name))?.name ?? '—') : (active?.files.find(f => f.name === `${key}.md`)?.name ?? (key === 'constitution' ? (state.constitution?.path ?? '—') : '—'))),
+              h('span', { className: 'sk-file' }, key === 'clarify' ? (specName ? `updates ${specName}` : '—') : key === 'analyze' ? (active?.files.find(f => /^analy[sz]e/i.test(f.name))?.name ?? '—') : (active?.files.find(f => f.name === `${key}.md`)?.name ?? (key === 'constitution' ? (state.constitution?.path ?? '—') : '—'))),
               h('button', { className: 'sk-button', type: 'button', onClick: () => send(command) }, 'Run'))),
             active?.tasks.total ? h(React.Fragment, null,
               h('p', { className: 'sk-muted', style: { marginTop: 8 } }, `Tasks: ${active.tasks.done} / ${active.tasks.total}`),
