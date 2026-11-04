@@ -113,13 +113,11 @@ async function clarified(ctx, root, slug) {
     const needle = `/speckit-clarify ${slug}`;
     for (const record of records) {
       try {
-        // Read the log itself: the shipped Web profile keeps the SQLite search
-        // index lazy, so searchEvents may be empty on a busy corpus.
-        const snapshot = await query.readSession(record.header.id);
-        const asked = snapshot.events
-          .filter(event => event.type === 'user/message')
-          .map(event => JSON.stringify(event.data));
-        if (asked.some(text => text.includes(needle))) { value = true; break; }
+        const hits = await query.filterEvents(record.header.id, [
+          { kind: 'type', values: ['user/message'] },
+          { kind: 'text', text: needle },
+        ]);
+        if (hits.length) { value = true; break; }
       } catch { /* unreadable session does not prove anything */ }
     }
   } catch { value = false; }
