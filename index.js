@@ -109,15 +109,17 @@ async function clarified(ctx, root, slug) {
   if (cached && Date.now() - cached.at < 15000) return cached.value;
   let value = false;
   try {
-    const records = (await query.filterSessions([{ kind: 'cwd', values: [root] }])).slice(0, 40);
+    const records = (await query.filterSessions([{ kind: 'cwd', values: [root] }])).slice(0, 12);
     const needle = `/speckit-clarify ${slug}`;
     for (const record of records) {
       try {
-        const page = await query.searchEvents({
-          sessionId: record.header.id, query: '/speckit-clarify',
-          filters: [{ kind: 'type', values: ['user/message'] }], limit: 20,
-        });
-        if (page.items.some(hit => String(hit.snippet ?? '').includes(needle))) { value = true; break; }
+        // Read the log itself: the shipped Web profile keeps the SQLite search
+        // index lazy, so searchEvents may be empty on a busy corpus.
+        const snapshot = await query.readSession(record.header.id);
+        const asked = snapshot.events
+          .filter(event => event.type === 'user/message')
+          .map(event => JSON.stringify(event.data));
+        if (asked.some(text => text.includes(needle))) { value = true; break; }
       } catch { /* unreadable session does not prove anything */ }
     }
   } catch { value = false; }
