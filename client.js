@@ -65,7 +65,6 @@ window.__ModuleLoader__.load({
       }
       const ready = name => name === 'constitution' ? Boolean(state?.constitution)
         : name === 'specify' ? Boolean(specName)
-        : name === 'clarify' ? Boolean(specName)
         : has(name);
       return h('section', { className: 'sk-page' }, h('style', null, css),
         h('div', { className: 'sk-row sk-between' }, h('h1', { className: 'sk-title' }, 'Spec Kit'), h('button', { className: 'sk-button', type: 'button', onClick: () => setTick(x => x + 1) }, 'Refresh')),
