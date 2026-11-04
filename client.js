@@ -66,7 +66,9 @@ window.__ModuleLoader__.load({
       const ready = name => name === 'constitution' ? Boolean(state?.constitution)
         : name === 'specify' ? Boolean(specName)
         : name === 'clarify' ? Boolean(active?.clarify)
-        : has(name);
+        : name === 'analyze' ? Boolean(active?.files.some(f => /^analy[sz]e.*\.md$/i.test(f.name)))
+        : name === 'implement' ? Boolean(active?.tasks.total && active.tasks.done === active.tasks.total)
+        : Boolean(active?.files.some(f => f.name === `${name}.md`));
       return h('section', { className: 'sk-page' }, h('style', null, css),
         h('div', { className: 'sk-row sk-between' }, h('h1', { className: 'sk-title' }, 'Spec Kit'), h('button', { className: 'sk-button', type: 'button', onClick: () => setTick(x => x + 1) }, 'Refresh')),
         state ? h('p', { className: 'sk-muted' }, `${state.workspace}${state.branch ? ` · ${state.branch}` : ''}`) : h('p', { className: 'sk-muted' }, 'Loading…'),
