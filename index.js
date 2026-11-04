@@ -7,7 +7,7 @@ import path from 'node:path';
 export const inject = ['connection', 'sessions', 'workingDirectory'];
 export const API = '/api/dsh-speckit-panel';
 const LIMIT = 256 * 1024;
-const FILE_NAMES = ['spec.md', 'specify.md', 'plan.md', 'tasks.md', 'checklist.md', 'research.md', 'data-model.md', 'quickstart.md'];
+const FILE_NAMES = ['spec.md', 'specify.md', 'clarify.md', 'plan.md', 'tasks.md', 'checklist.md', 'research.md', 'data-model.md', 'quickstart.md'];
 
 const fail = (code, message) => { throw Object.assign(new Error(message), { code }); };
 
@@ -35,7 +35,7 @@ function inside(root, abs) {
 
 function relative(root, abs) { return path.relative(root, abs).split(path.sep).join('/'); }
 
-async function listFeatures(root, ctx) {
+async function listFeatures(root) {
   const sources = [
     { layout: 'specs', dir: path.join(root, 'specs') },
     { layout: '.speckit', dir: path.join(root, '.speckit', 'features') },
@@ -88,41 +88,12 @@ async function listFeatures(root, ctx) {
           } catch { /* keep slug */ }
         }
       }
-      features.push({ slug: entry.name, path: rel, layout: source.layout, title, files, tasks, clarify: await clarified(ctx, root, entry.name) });
+      features.push({ slug: entry.name, path: rel, layout: source.layout, title, files, tasks,
+        clarify: files.some(file => file.name === 'clarify.md') });
     }
   }
   features.sort((a, b) => b.slug.localeCompare(a.slug));
   return features;
-}
-
-const clarifyCache = new Map();
-
-/**
- * Whether any session in this workspace ever ran /speckit-clarify for the
- * feature. Session logs are files, so the answer is shared by every device.
- */
-async function clarified(ctx, root, slug) {
-  const query = ctx.get('sessionQuery');
-  if (!query?.filterSessions || !query?.searchEvents) return false;
-  const key = `${root}|${slug}`;
-  const cached = clarifyCache.get(key);
-  if (cached && Date.now() - cached.at < 15000) return cached.value;
-  let value = false;
-  try {
-    const records = (await query.filterSessions([{ kind: 'cwd', values: [root] }])).slice(0, 12);
-    const needle = `/speckit-clarify ${slug}`;
-    for (const record of records) {
-      try {
-        const hits = await query.filterEvents(record.header.id, [
-          { kind: 'type', values: ['user/message'] },
-          { kind: 'text', text: needle },
-        ]);
-        if (hits.length) { value = true; break; }
-      } catch { /* unreadable session does not prove anything */ }
-    }
-  } catch { value = false; }
-  clarifyCache.set(key, { at: Date.now(), value });
-  return value;
 }
 
 async function constitution(root) {
@@ -172,7 +143,7 @@ export async function apply(ctx) {
         const sessionId = url.searchParams.get('session') ?? '';
         const root = sessionRoot(ctx, sessionId);
         if (action === 'state') {
-          const features = await listFeatures(root, ctx);
+          const features = await listFeatures(root);
           return json({ workspace: root, branch: await branch(root), constitution: await constitution(root), features });
         }
         if (action === 'file') {
