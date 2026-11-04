@@ -163,3 +163,5 @@ export async function apply(ctx) {
     },
   }), 'speckit-panel.api');
 }
+
+export { listFeatures, constitution, branch };
