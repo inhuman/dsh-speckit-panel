@@ -66,7 +66,7 @@ window.__ModuleLoader__.load({
       const ready = name => name === 'constitution' ? Boolean(state?.constitution)
         : name === 'specify' ? Boolean(specName)
         : name === 'clarify' ? Boolean(active?.clarify)
-        : name === 'analyze' ? Boolean(active?.files.some(f => /^analy[sz]e.*\.md$/i.test(f.name)))
+        : name === 'analyze' ? Boolean(active?.analyze)
         : name === 'implement' ? Boolean(active?.tasks.total && active.tasks.done === active.tasks.total)
         : Boolean(active?.files.some(f => f.name === `${name}.md`));
       return h('section', { className: 'sk-page' }, h('style', null, css),
@@ -99,7 +99,7 @@ window.__ModuleLoader__.load({
             ...STAGES.map(([key, label, command]) => h('div', { className: 'sk-stage', key },
               h('span', { className: 'sk-dot', 'data-ready': ready(key) }),
               h('span', { className: 'sk-name' }, label),
-              h('span', { className: 'sk-file' }, key === 'clarify' ? (active?.clarify ? `clarified${active.clarifySession ? ` · ${active.clarifySession}` : ''}` : '—') : key === 'analyze' ? (active?.files.find(f => /^analy[sz]e/i.test(f.name))?.name ?? '—') : (active?.files.find(f => f.name === `${key}.md`)?.name ?? (key === 'constitution' ? (state.constitution?.path ?? '—') : '—'))),
+              h('span', { className: 'sk-file' }, key === 'clarify' ? (active?.clarify ? `clarified${active.clarifySession ? ` · ${active.clarifySession}` : ''}` : '—') : key === 'analyze' ? (active?.analyze ? `analyzed${active.analyzeSession ? ` · ${active.analyzeSession}` : ''}` : '—') : (active?.files.find(f => f.name === `${key}.md`)?.name ?? (key === 'constitution' ? (state.constitution?.path ?? '—') : '—'))),
               h('button', { className: 'sk-button', type: 'button', onClick: () => {
                 if (key === 'clarify' && slug) send(command, `${slug}\nFollow upstream Spec Kit: record each accepted answer in a \`## Clarifications\` section of the feature spec, under a \`### Session YYYY-MM-DD\` subheading, so the panel can mark this stage on every device.`);
                 else send(command);

@@ -74,6 +74,8 @@ async function listFeatures(root) {
       let tasks = { done: 0, total: 0 };
       let clarify = false;
       let clarifySession = null;
+      let analyze = false;
+      let analyzeSession = null;
       for (const file of files) {
         if (file.name === 'tasks.md') {
           try {
@@ -97,11 +99,16 @@ async function listFeatures(root) {
           } catch { /* keep slug */ }
         }
       }
+      const analyzeFile = files.find(file => /^analy[sz]e.*\.md$/i.test(file.name));
+      analyze = Boolean(analyzeFile);
       const specRel = files.find(file => file.name === 'spec.md' || file.name === 'specify.md')?.path;
-      const clarifyCommit = !clarify && specRel ? await gitClarified(root, specRel) : null;
+      const clarifyCommit = !clarify && specRel ? await gitSubjectDate(root, specRel, /clarif/i) : null;
+      const analyzeCommit = !analyze ? await gitSubjectDate(root, rel, /analy[sz]e/i) : null;
       features.push({ slug: entry.name, path: rel, layout: source.layout, title, files, tasks,
         clarify: clarify || Boolean(clarifyCommit),
-        clarifySession: clarifySession ?? clarifyCommit });
+        clarifySession: clarifySession ?? clarifyCommit,
+        analyze: analyze || Boolean(analyzeCommit),
+        analyzeSession: analyzeSession ?? analyzeCommit });
     }
   }
   features.sort((a, b) => b.slug.localeCompare(a.slug));
@@ -109,28 +116,28 @@ async function listFeatures(root) {
 }
 
 const run = promisify(execFile);
-const clarifyCommits = new Map();
+const subjectCommits = new Map();
 
 /**
- * A read-only fallback for specs clarified before the section convention:
- * a commit that touched this spec and says "clarify" in its subject.
+ * A read-only fallback for stages that left no report file: a commit that
+ * touched the feature and names the stage in its subject.
  * @returns the commit date (YYYY-MM-DD) or null.
  */
-async function gitClarified(root, specRel) {
-  const key = `${root}|${specRel}`;
-  const cached = clarifyCommits.get(key);
+async function gitSubjectDate(root, rel, pattern) {
+  const key = `${root}|${rel}|${pattern}`;
+  const cached = subjectCommits.get(key);
   if (cached && Date.now() - cached.at < 30000) return cached.value;
   let value = null;
   try {
-    const { stdout } = await run('git', ['-C', root, 'log', '--format=%cs%x09%s', '-n', '30', '--', specRel], {
+    const { stdout } = await run('git', ['-C', root, 'log', '--format=%cs%x09%s', '-n', '60', '--', rel], {
       timeout: 2000, maxBuffer: 64 * 1024,
     });
     for (const line of stdout.split('\n')) {
       const [date, subject] = line.split('\t');
-      if (subject && /clarif/i.test(subject)) { value = date || null; break; }
+      if (subject && pattern.test(subject)) { value = date || null; break; }
     }
   } catch { value = null; }
-  clarifyCommits.set(key, { at: Date.now(), value });
+  subjectCommits.set(key, { at: Date.now(), value });
   return value;
 }
 
